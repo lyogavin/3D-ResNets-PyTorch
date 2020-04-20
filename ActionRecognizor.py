@@ -89,6 +89,11 @@ class ActionRecognizor:
 
         #clips = []
         video_outputs = []
+        model = generate_model(self.opt)
+
+
+        model = load_pretrained_model(model, self.opt.pretrain_path, self.opt.model,
+                                      self.opt.n_finetune_classes)
         for frame_indice in frame_indices:
             clip = loader(self.opt.video_jpgs_dir_path, frame_indice)
 
@@ -99,11 +104,6 @@ class ActionRecognizor:
 
 
 
-            model = generate_model(self.opt)
-
-
-            model = load_pretrained_model(model, self.opt.pretrain_path, self.opt.model,
-                                          self.opt.n_finetune_classes)
 
 
             #parameters = get_fine_tuning_parameters(model, opt.ft_begin_module)
@@ -113,11 +113,14 @@ class ActionRecognizor:
 
 
             #for clip in clips:
-            output = model(torch.unsqueeze(clip, 0))
-            output = F.softmax(output, dim=1).cpu()
+            with torch.no_grad():
 
-            #print(output)
-            video_outputs.append(output[0])
+                print(clip.shape)
+                output = model(torch.unsqueeze(clip, 0))
+                output = F.softmax(output, dim=1).cpu()
+
+                #print(output)
+                video_outputs.append(output[0])
 
             del clip
 
