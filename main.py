@@ -320,6 +320,7 @@ def main_worker(index, opt):
     np.random.seed(opt.manual_seed)
     torch.manual_seed(opt.manual_seed)
 
+    print('opt', opt)
     if index >= 0 and opt.device.type == 'cuda':
         opt.device = torch.device(f'cuda:{index}')
 
@@ -413,6 +414,7 @@ def main_worker(index, opt):
 
 if __name__ == '__main__':
     opt = get_opt()
+    print(opt)
 
     opt.device = torch.device('cpu' if opt.no_cuda else 'cuda')
     if not opt.no_cuda:

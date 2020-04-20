@@ -35,7 +35,9 @@ def inference(data_loader, model, result_path, class_names, no_average,
     end_time = time.time()
 
     with torch.no_grad():
+        print('enumerating...')
         for i, (inputs, targets) in enumerate(data_loader):
+            print("%d - inputs: %s targets: %s" % (i, str(inputs), str(targets)))
             data_time.update(time.time() - end_time)
 
             video_ids, segments = zip(*targets)
