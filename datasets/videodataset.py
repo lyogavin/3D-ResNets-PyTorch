@@ -69,6 +69,12 @@ class VideoDataset(data.Dataset):
             data = json.load(f)
         video_ids, video_paths, annotations = get_database(
             data, subset, root_path, video_path_formatter)
+        print('video_ids')
+        print(video_ids)
+        print('video_paths')
+        print(video_paths)
+        print('annotations')
+        print(annotations)
         class_to_idx = get_class_labels(data)
         idx_to_class = {}
         for name, label in class_to_idx.items():
@@ -89,6 +95,8 @@ class VideoDataset(data.Dataset):
 
             video_path = video_paths[i]
             if not video_path.exists():
+                print(video_path)
+                print('not exist')
                 continue
 
             segment = annotations[i]['segment']

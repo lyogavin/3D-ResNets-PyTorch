@@ -8,6 +8,12 @@ def parse_opts():
                         default=None,
                         type=Path,
                         help='Root directory path')
+    parser.add_argument('--video_jpgs_dir_path', dest='video_jpgs_dir_path', action='store',
+                        type=Path,
+                        default='./',
+                        help='dir path to the path converted images of the video')
+
+
     parser.add_argument('--video_path',
                         default=None,
                         type=Path,
