@@ -23,6 +23,7 @@ from temporal_transforms import (LoopPadding, TemporalRandomCrop,
 from temporal_transforms import Compose as TemporalCompose
 from util_scripts.utils import get_n_frames
 from datasets.loader import VideoLoader
+from datasets.videodataset import get_class_labels
 
 from model import (generate_model, load_pretrained_model, make_data_parallel,
                    get_fine_tuning_parameters)
@@ -116,15 +117,23 @@ class ActionRecognizor:
             output = F.softmax(output, dim=1).cpu()
 
             #print(output)
-            video_outputs.append(output)
+            video_outputs.append(output[0])
 
         video_outputs = torch.stack(video_outputs)
         average_scores = torch.mean(video_outputs, dim=0)
 
-        inference_loader, inference_class_names = main.get_inference_utils(opt)
+        #inference_loader, inference_class_names = main.get_inference_utils(self.opt)
+        with self.opt.annotation_path.open('r') as f:
+            data = json.load(f)
+
+        class_to_idx = get_class_labels(data)
+        idx_to_class = {}
+        for name, label in class_to_idx.items():
+            idx_to_class[label] = name
+        print(idx_to_class)
 
         inference_result = inference.get_video_results(
-            average_scores, inference_class_names, opt.output_topk)
+            average_scores, idx_to_class, self.opt.output_topk)
 
         print(inference_result)
 
