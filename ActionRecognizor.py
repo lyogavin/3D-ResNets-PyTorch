@@ -9,8 +9,8 @@ from utils import AverageMeter
 from opts import parse_opts
 from pathlib import Path
 import numpy as np
-
-
+import main
+import inference
 
 from spatial_transforms import (Compose, Normalize, Resize, CenterCrop,
                                 CornerCrop, MultiScaleCornerCrop,
@@ -85,13 +85,15 @@ class ActionRecognizor:
         loader = VideoLoader(image_name_formatter)
 
         print('frame_indices', frame_indices)
-        clip = loader(self.opt.video_jpgs_dir_path, frame_indices[0])
-
 
         clips = []
+        for frame_indice in frame_indices:
+            clip = loader(self.opt.video_jpgs_dir_path, frame_indice)
 
-        clip = [spatial_transform(img) for img in clip]
-        clips.append(torch.stack(clip, 0).permute(1, 0, 2, 3))
+
+
+            clip = [spatial_transform(img) for img in clip]
+            clips.append(torch.stack(clip, 0).permute(1, 0, 2, 3))
 
 
 
@@ -106,10 +108,25 @@ class ActionRecognizor:
 
 
         print('clips:', clips)
-        outputs = model(torch.unsqueeze(clips[0], 0))
-        outputs = F.softmax(outputs, dim=1).cpu()
 
-        print(outputs)
+        video_outputs = []
+
+        for clip in clips:
+            output = model(torch.unsqueeze(clip, 0))
+            output = F.softmax(output, dim=1).cpu()
+
+            #print(output)
+            video_outputs.append(output)
+
+        video_outputs = torch.stack(video_outputs)
+        average_scores = torch.mean(video_outputs, dim=0)
+
+        inference_loader, inference_class_names = main.get_inference_utils(opt)
+
+        inference_result = inference.get_video_results(
+            average_scores, inference_class_names, opt.output_topk)
+
+        print(inference_result)
 
 if __name__ == '__main__':
 
