@@ -87,37 +87,39 @@ class ActionRecognizor:
 
         print('frame_indices', frame_indices)
 
-        clips = []
+        #clips = []
+        video_outputs = []
         for frame_indice in frame_indices:
             clip = loader(self.opt.video_jpgs_dir_path, frame_indice)
 
 
 
             clip = [spatial_transform(img) for img in clip]
-            clips.append(torch.stack(clip, 0).permute(1, 0, 2, 3))
+            clip = torch.stack(clip, 0).permute(1, 0, 2, 3)
 
 
 
-        model = generate_model(self.opt)
+            model = generate_model(self.opt)
 
 
-        model = load_pretrained_model(model, self.opt.pretrain_path, self.opt.model,
-                                      self.opt.n_finetune_classes)
+            model = load_pretrained_model(model, self.opt.pretrain_path, self.opt.model,
+                                          self.opt.n_finetune_classes)
 
 
-        #parameters = get_fine_tuning_parameters(model, opt.ft_begin_module)
+            #parameters = get_fine_tuning_parameters(model, opt.ft_begin_module)
 
 
-        print('clips:', clips)
+            #print('clips:', clips)
 
-        video_outputs = []
 
-        for clip in clips:
+            #for clip in clips:
             output = model(torch.unsqueeze(clip, 0))
             output = F.softmax(output, dim=1).cpu()
 
             #print(output)
             video_outputs.append(output[0])
+
+            del clip
 
         video_outputs = torch.stack(video_outputs)
         average_scores = torch.mean(video_outputs, dim=0)
