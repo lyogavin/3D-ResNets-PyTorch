@@ -1,8 +1,24 @@
 import subprocess
 import argparse
 from pathlib import Path
+import logging
+
+import sys
+
 
 from joblib import Parallel, delayed
+
+logger = logging.getLogger()
+formatter = logging.Formatter(
+    '%(process)d-%(asctime)s %(levelname)s: %(message)s '
+    '[in %(pathname)s:%(lineno)d]')
+file_handler = logging.FileHandler("./generate_video_jpgs.log")
+handler = logging.StreamHandler(sys.stdout)
+
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.addHandler(file_handler)
+logger.setLevel(logging.INFO)
 
 
 def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
@@ -13,11 +29,19 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
                    '-of default=noprint_wrappers=1:nokey=1 -show_entries '
                    'stream=width,height,avg_frame_rate,duration').split()
     ffprobe_cmd.append(str(video_file_path))
+    logger.info(f"running: {ffprobe_cmd}")
 
-    p = subprocess.run(ffprobe_cmd, capture_output=True)
-    res = p.stdout.decode('utf-8').splitlines()
-    if len(res) < 4:
-        return
+    try:
+        ffoutput = subprocess.check_output(' '.join(ffprobe_cmd), shell=True, stderr=subprocess.STDOUT)
+        #p = subprocess.run(ffprobe_cmd, capture_output=True)
+        #res = p.stdout.decode('utf-8').splitlines()
+        res = ffoutput.decode('utf-8').splitlines()
+        if len(res) < 4:
+            logger.info(f"error ffprobe, output len less then 4: {ffoutput}")
+            return
+
+    except subprocess.CalledProcessError as err:
+        logger.info(f"error ffprobe exp:{err}, output:{ffoutput}")
 
     frame_rate = [float(r) for r in res[2].split('/')]
     frame_rate = frame_rate[0] / frame_rate[1]
@@ -33,6 +57,7 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
     ])
 
     if n_exist_frames >= n_frames:
+        logger.info(f"{n_exist_frames} already exists more than expected:{n_frames}, return")
         return
 
     width = int(res[0])
@@ -48,9 +73,15 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
 
     ffmpeg_cmd = ['ffmpeg', '-i', str(video_file_path), '-vf', vf_param]
     ffmpeg_cmd += ['-threads', '1', '{}/image_%05d.jpg'.format(dst_dir_path)]
-    print(ffmpeg_cmd)
-    subprocess.run(ffmpeg_cmd)
-    print('\n')
+    logger.info(f"to run:{ffmpeg_cmd}")
+    #subprocess.run(ffmpeg_cmd)
+    try:
+        ffoutput = subprocess.check_output(' '.join(ffmpeg_cmd), shell=True, stderr=subprocess.STDOUT)
+
+    except subprocess.CalledProcessError as err:
+        logger.info(f"error ffprobe exp:{err}, output:{ffoutput}")
+
+    logger.info('\n')
 
 
 def class_process(class_dir_path, dst_root_path, ext, fps=-1, size=240):
@@ -60,8 +91,12 @@ def class_process(class_dir_path, dst_root_path, ext, fps=-1, size=240):
     dst_class_path = dst_root_path / class_dir_path.name
     dst_class_path.mkdir(exist_ok=True)
 
+    processed_files = 0
     for video_file_path in sorted(class_dir_path.iterdir()):
+        logger.info(f"processing: {video_file_path}")
         video_process(video_file_path, dst_class_path, ext, fps, size)
+        processed_files += 1
+    logger.info(f"processed {processed_files} videos for {class_dir_path}")
 
 
 if __name__ == '__main__':
