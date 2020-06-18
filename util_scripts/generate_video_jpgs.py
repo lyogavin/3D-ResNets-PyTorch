@@ -23,7 +23,8 @@ logger.setLevel(logging.INFO)
 
 def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
     if ext != video_file_path.suffix:
-        return
+        logger.error(f"unknown ext: {ext}")
+        return False
 
     ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
                    '-of default=noprint_wrappers=1:nokey=1 -show_entries '
@@ -37,11 +38,12 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
         #res = p.stdout.decode('utf-8').splitlines()
         res = ffoutput.decode('utf-8').splitlines()
         if len(res) < 4:
-            logger.info(f"error ffprobe, output len less then 4: {ffoutput}")
-            return
+            logger.error(f"error ffprobe, output len less then 4: {ffoutput}")
+            return False
 
     except subprocess.CalledProcessError as err:
-        logger.info(f"error ffprobe exp:{err}, output:{ffoutput}")
+        logger.error(f"error ffprobe exp:{err}, output:{ffoutput}")
+        return False
 
     frame_rate = [float(r) for r in res[2].split('/')]
     frame_rate = frame_rate[0] / frame_rate[1]
@@ -58,7 +60,7 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
 
     if n_exist_frames >= n_frames:
         logger.info(f"{n_exist_frames} already exists more than expected:{n_frames}, return")
-        return
+        return True
 
     width = int(res[0])
     height = int(res[1])
@@ -79,9 +81,10 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
         ffoutput = subprocess.check_output(' '.join(ffmpeg_cmd), shell=True, stderr=subprocess.STDOUT)
 
     except subprocess.CalledProcessError as err:
-        logger.info(f"error ffprobe exp:{err}, output:{ffoutput}")
+        logger.error(f"error ffprobe exp:{err}, output:{ffoutput}")
+        return False
 
-    logger.info('\n')
+    return True
 
 
 def class_process(class_dir_path, dst_root_path, ext, fps=-1, size=240):
@@ -94,7 +97,10 @@ def class_process(class_dir_path, dst_root_path, ext, fps=-1, size=240):
     processed_files = 0
     for video_file_path in sorted(class_dir_path.iterdir()):
         logger.info(f"processing: {video_file_path}")
-        video_process(video_file_path, dst_class_path, ext, fps, size)
+        res = video_process(video_file_path, dst_class_path, ext, fps, size)
+        if not res:
+            logger.error(f"processing {video_file_path} failed")
+            return
         processed_files += 1
     logger.info(f"processed {processed_files} videos for {class_dir_path}")
 
@@ -134,6 +140,7 @@ if __name__ == '__main__':
         video_file_paths = [x for x in sorted(args.dir_path.iterdir())]
         status_list = Parallel(
             n_jobs=args.n_jobs,
+            verbose=10,
             backend='threading')(delayed(video_process)(
                 video_file_path, args.dst_path, ext, args.fps, args.size)
                                  for video_file_path in video_file_paths)
