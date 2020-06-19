@@ -31,6 +31,7 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
                    'stream=width,height,avg_frame_rate,duration').split()
     ffprobe_cmd.append(str(video_file_path))
     logger.info(f"running: {ffprobe_cmd}")
+    ffoutput = None
 
     try:
         ffoutput = subprocess.check_output(' '.join(ffprobe_cmd), shell=True, stderr=subprocess.STDOUT)
@@ -77,6 +78,7 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
     ffmpeg_cmd += ['-threads', '1', '{}/image_%05d.jpg'.format(dst_dir_path)]
     logger.info(f"to run:{ffmpeg_cmd}")
     #subprocess.run(ffmpeg_cmd)
+    ffoutput = None
     try:
         ffoutput = subprocess.check_output(' '.join(ffmpeg_cmd), shell=True, stderr=subprocess.STDOUT)
 
