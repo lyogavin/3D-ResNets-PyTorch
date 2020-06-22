@@ -4,8 +4,8 @@
 
 
 #for train
-nohup python3 -m util_scripts.generate_video_jpgs --n_jobs 7 --fps 1 /media/windows_4/kinetics/compress/train_256/ /media/windows_4/kinetics/compress/train_256_jpgs/ kinetics &
+#nohup python3 -m util_scripts.generate_video_jpgs --n_jobs 7 --fps 1 /media/windows_4/kinetics/compress/train_256/ /media/windows_4/kinetics/compress/train_256_jpgs/ kinetics &
 
 
 #for val
-#nohup python3 -m util_scripts.generate_video_jpgs --n_jobs 7 --fps 1 /media/windows_4/kinetics/compress/val_256/ /media/windows_4/kinetics/compress/val_256_jpgs/ kinetics&
+nohup python3 -m util_scripts.generate_video_jpgs --n_jobs 7 --fps 1 /media/windows_4/kinetics/compress/val_256/ /media/windows_4/kinetics/compress/val_256_jpgs/ kinetics&

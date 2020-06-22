@@ -22,9 +22,9 @@ logger.setLevel(logging.INFO)
 
 
 def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
-    if ext != video_file_path.suffix:
-        logger.error(f"unknown ext: {ext}")
-        return False
+    #if ext != video_file_path.suffix:
+    #    logger.error(f"unknown ext: {ext}")
+    #    return False
 
     ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
                    '-of default=noprint_wrappers=1:nokey=1 -show_entries '
