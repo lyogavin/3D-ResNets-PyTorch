@@ -28,9 +28,16 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
     #    logger.error(f"unknown ext: {ext}")
     #    return False
 
-    ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
-                   '-of default=noprint_wrappers=1:nokey=1 -show_entries '
-                   'stream=width,height,avg_frame_rate,duration').split()
+
+    if video_file_path.suffix == "mkv":
+        ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
+                       '-of default=noprint_wrappers=1:nokey=1 -show_entries '
+                       'stream=width,height,avg_frame_rate -show_entries format=duration').split()
+    else:
+
+        ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
+                       '-of default=noprint_wrappers=1:nokey=1 -show_entries '
+                       'stream=width,height,avg_frame_rate,duration').split()
     ffprobe_cmd.append(str(video_file_path))
     logger.info(f"running: {ffprobe_cmd}")
     ffoutput = None
@@ -99,7 +106,7 @@ def class_process(class_dir_path, dst_root_path, ext, fps=-1, size=240):
     dst_class_path.mkdir(exist_ok=True)
 
     processed_files = 0
-    for video_file_path in tqdm(sorted(class_dir_path.iterdir())):
+    for video_file_path in tqdm(sorted(class_dir_path.iterdir()), postfix=f"[class:{class_dir_path}]"):
         logger.info(f"processing: {video_file_path}")
         res = video_process(video_file_path, dst_class_path, ext, fps, size)
         if not res:
@@ -158,4 +165,4 @@ if __name__ == '__main__':
             n_jobs=args.n_jobs,
             backend='threading')(delayed(class_process)(
                 class_dir_path, args.dst_path, ext, args.fps, args.size)
-                                 for class_dir_path in tqdm(class_dir_paths))
+                                 for class_dir_path in tqdm(class_dir_paths, postfix="[overall]"))
