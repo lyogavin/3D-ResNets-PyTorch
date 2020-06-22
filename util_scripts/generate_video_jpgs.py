@@ -28,9 +28,16 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
         logger.error(f"unknown ext: {ext}")
         return False
 
-    ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
-                   '-of default=noprint_wrappers=1:nokey=1 -show_entries '
-                   'stream=width,height,avg_frame_rate,duration').split()
+
+    if video_file_path.suffix == "mkv":
+        ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
+                       '-of default=noprint_wrappers=1:nokey=1 -show_entries '
+                       'stream=width,height,avg_frame_rate -show_entries format=duration').split()
+    else:
+
+        ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
+                       '-of default=noprint_wrappers=1:nokey=1 -show_entries '
+                       'stream=width,height,avg_frame_rate,duration').split()
     ffprobe_cmd.append(str(video_file_path))
     logger.info(f"running: {ffprobe_cmd}")
     ffoutput = None
