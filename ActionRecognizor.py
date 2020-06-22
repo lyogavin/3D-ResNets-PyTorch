@@ -94,7 +94,12 @@ class ActionRecognizor:
 
         model = load_pretrained_model(model, self.opt.pretrain_path, self.opt.model,
                                       self.opt.n_finetune_classes)
+
+        i =0
         for frame_indice in frame_indices:
+            print("%d indice: %s" % (i, str(frame_indice)))
+            i+=1
+
             clip = loader(self.opt.video_jpgs_dir_path, frame_indice)
 
 

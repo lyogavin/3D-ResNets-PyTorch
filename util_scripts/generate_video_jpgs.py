@@ -2,6 +2,8 @@ import subprocess
 import argparse
 from pathlib import Path
 import logging
+from tqdm import tqdm
+
 
 import sys
 
@@ -97,7 +99,7 @@ def class_process(class_dir_path, dst_root_path, ext, fps=-1, size=240):
     dst_class_path.mkdir(exist_ok=True)
 
     processed_files = 0
-    for video_file_path in sorted(class_dir_path.iterdir()):
+    for video_file_path in tqdm(sorted(class_dir_path.iterdir())):
         logger.info(f"processing: {video_file_path}")
         res = video_process(video_file_path, dst_class_path, ext, fps, size)
         if not res:
@@ -156,4 +158,4 @@ if __name__ == '__main__':
             n_jobs=args.n_jobs,
             backend='threading')(delayed(class_process)(
                 class_dir_path, args.dst_path, ext, args.fps, args.size)
-                                 for class_dir_path in class_dir_paths)
+                                 for class_dir_path in tqdm(class_dir_paths))
