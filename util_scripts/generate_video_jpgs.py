@@ -32,6 +32,12 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
     #logger.info(f"suffix: {video_file_path.suffix}")
 
     try:
+        #skip zero size file:
+
+        if Path(video_file_path).stat().st_size == 0:
+            logger.info(f"skipping zero size file: {video_file_path}")
+            return True
+
         if video_file_path.suffix == ".mkv" or video_file_path.suffix == ".webm":
             ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
                            '-of default=noprint_wrappers=1:nokey=1 -show_entries '
@@ -41,7 +47,7 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
             ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
                            '-of default=noprint_wrappers=1:nokey=1 -show_entries '
                            'stream=width,height,avg_frame_rate,duration').split()
-        ffprobe_cmd.append(str(video_file_path))
+        ffprobe_cmd.append(f"\"{video_file_path}\"")
         logger.info("running: %s" % " ".join(ffprobe_cmd))
         ffoutput = None
 
@@ -91,7 +97,7 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
         if fps > 0:
             vf_param += ',minterpolate={}'.format(fps)
 
-        ffmpeg_cmd = ['ffmpeg', '-i', str(video_file_path), '-vf', vf_param]
+        ffmpeg_cmd = ['ffmpeg', '-i', f"\"{video_file_path}\"", '-vf', vf_param]
         ffmpeg_cmd += ['-threads', '1', '{}/image_%05d.jpg'.format(dst_dir_path)]
         logger.info(f"to run:{ffmpeg_cmd}")
         #subprocess.run(ffmpeg_cmd)
