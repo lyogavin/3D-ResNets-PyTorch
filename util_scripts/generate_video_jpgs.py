@@ -24,12 +24,13 @@ logger.setLevel(logging.INFO)
 
 
 def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
-    if ext != video_file_path.suffix:
-        logger.error(f"unknown ext: {ext}")
-        return False
+    #if ext != video_file_path.suffix:
+    #    logger.error(f"unknown ext: {ext}")
+    #    return False
 
 
-    if video_file_path.suffix == "mkv":
+    #logger.info(f"suffix: {video_file_path.suffix}")
+    if video_file_path.suffix == ".mkv" or video_file_path.suffix == ".webm":
         ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
                        '-of default=noprint_wrappers=1:nokey=1 -show_entries '
                        'stream=width,height,avg_frame_rate -show_entries format=duration').split()
