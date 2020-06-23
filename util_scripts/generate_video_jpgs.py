@@ -59,6 +59,10 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
     frame_rate = [float(r) for r in res[2].split('/')]
     frame_rate = frame_rate[0] / frame_rate[1]
     duration = float(res[3])
+
+    if fps > 0:
+        frame_rate = fps
+
     n_frames = int(frame_rate * duration)
 
     name = video_file_path.stem
