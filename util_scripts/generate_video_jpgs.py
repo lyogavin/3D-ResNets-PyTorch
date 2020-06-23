@@ -32,76 +32,76 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
     #logger.info(f"suffix: {video_file_path.suffix}")
 
     try:
-    if video_file_path.suffix == ".mkv" or video_file_path.suffix == ".webm":
-        ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
-                       '-of default=noprint_wrappers=1:nokey=1 -show_entries '
-                       'stream=width,height,avg_frame_rate -show_entries format=duration').split()
-    else:
+        if video_file_path.suffix == ".mkv" or video_file_path.suffix == ".webm":
+            ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
+                           '-of default=noprint_wrappers=1:nokey=1 -show_entries '
+                           'stream=width,height,avg_frame_rate -show_entries format=duration').split()
+        else:
 
-        ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
-                       '-of default=noprint_wrappers=1:nokey=1 -show_entries '
-                       'stream=width,height,avg_frame_rate,duration').split()
-    ffprobe_cmd.append(str(video_file_path))
-    logger.info("running: %s" % " ".join(ffprobe_cmd))
-    ffoutput = None
+            ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
+                           '-of default=noprint_wrappers=1:nokey=1 -show_entries '
+                           'stream=width,height,avg_frame_rate,duration').split()
+        ffprobe_cmd.append(str(video_file_path))
+        logger.info("running: %s" % " ".join(ffprobe_cmd))
+        ffoutput = None
 
-    try:
-        ffoutput = subprocess.check_output(' '.join(ffprobe_cmd), shell=True, stderr=subprocess.STDOUT)
-        #p = subprocess.run(ffprobe_cmd, capture_output=True)
-        #res = p.stdout.decode('utf-8').splitlines()
-        res = ffoutput.decode('utf-8').splitlines()
-        if len(res) < 4:
-            logger.error(f"error ffprobe, output len less then 4: {ffoutput}")
+        try:
+            ffoutput = subprocess.check_output(' '.join(ffprobe_cmd), shell=True, stderr=subprocess.STDOUT)
+            #p = subprocess.run(ffprobe_cmd, capture_output=True)
+            #res = p.stdout.decode('utf-8').splitlines()
+            res = ffoutput.decode('utf-8').splitlines()
+            if len(res) < 4:
+                logger.error(f"error ffprobe, output len less then 4: {ffoutput}")
+                return False
+
+        except subprocess.CalledProcessError as err:
+            logger.error(f"error ffprobe exp:{err}, output:{ffoutput}")
             return False
 
-    except subprocess.CalledProcessError as err:
-        logger.error(f"error ffprobe exp:{err}, output:{ffoutput}")
-        return False
+        frame_rate = [float(r) for r in res[2].split('/')]
+        frame_rate = frame_rate[0] / frame_rate[1]
+        duration = float(res[3])
 
-    frame_rate = [float(r) for r in res[2].split('/')]
-    frame_rate = frame_rate[0] / frame_rate[1]
-    duration = float(res[3])
+        if fps > 0:
+            frame_rate = fps
 
-    if fps > 0:
-        frame_rate = fps
+        n_frames = int(frame_rate * duration)
 
-    n_frames = int(frame_rate * duration)
+        name = video_file_path.stem
+        dst_dir_path = dst_root_path / name
+        dst_dir_path.mkdir(exist_ok=True)
+        n_exist_frames = len([
+            x for x in dst_dir_path.iterdir()
+            if x.suffix == '.jpg' and x.name[0] != '.'
+        ])
 
-    name = video_file_path.stem
-    dst_dir_path = dst_root_path / name
-    dst_dir_path.mkdir(exist_ok=True)
-    n_exist_frames = len([
-        x for x in dst_dir_path.iterdir()
-        if x.suffix == '.jpg' and x.name[0] != '.'
-    ])
+        logger.info(f"exist:{n_exist_frames}  expected:{n_frames}")
+        if n_exist_frames >= n_frames:
+            logger.info(f"{n_exist_frames} already exists more than expected:{n_frames}, return")
+            return True
 
-    logger.info(f"exist:{n_exist_frames}  expected:{n_frames}")
-    if n_exist_frames >= n_frames:
-        logger.info(f"{n_exist_frames} already exists more than expected:{n_frames}, return")
-        return True
+        width = int(res[0])
+        height = int(res[1])
 
-    width = int(res[0])
-    height = int(res[1])
+        if width > height:
+            vf_param = 'scale=-1:{}'.format(size)
+        else:
+            vf_param = 'scale={}:-1'.format(size)
 
-    if width > height:
-        vf_param = 'scale=-1:{}'.format(size)
-    else:
-        vf_param = 'scale={}:-1'.format(size)
+        if fps > 0:
+            vf_param += ',minterpolate={}'.format(fps)
 
-    if fps > 0:
-        vf_param += ',minterpolate={}'.format(fps)
+        ffmpeg_cmd = ['ffmpeg', '-i', str(video_file_path), '-vf', vf_param]
+        ffmpeg_cmd += ['-threads', '1', '{}/image_%05d.jpg'.format(dst_dir_path)]
+        logger.info(f"to run:{ffmpeg_cmd}")
+        #subprocess.run(ffmpeg_cmd)
+        ffoutput = None
+        try:
+            ffoutput = subprocess.check_output(' '.join(ffmpeg_cmd), shell=True, stderr=subprocess.STDOUT)
 
-    ffmpeg_cmd = ['ffmpeg', '-i', str(video_file_path), '-vf', vf_param]
-    ffmpeg_cmd += ['-threads', '1', '{}/image_%05d.jpg'.format(dst_dir_path)]
-    logger.info(f"to run:{ffmpeg_cmd}")
-    #subprocess.run(ffmpeg_cmd)
-    ffoutput = None
-    try:
-        ffoutput = subprocess.check_output(' '.join(ffmpeg_cmd), shell=True, stderr=subprocess.STDOUT)
-
-    except subprocess.CalledProcessError as err:
-        logger.error(f"error ffprobe exp:{err}, output:{ffoutput}")
-        return False
+        except subprocess.CalledProcessError as err:
+            logger.error(f"error ffprobe exp:{err}, output:{ffoutput}")
+            return False
 
     except BaseException as error:
         logger.info('An exception occurred: {}'.format(error))
