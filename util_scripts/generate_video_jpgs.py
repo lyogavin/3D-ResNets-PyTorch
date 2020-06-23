@@ -30,6 +30,8 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
 
 
     #logger.info(f"suffix: {video_file_path.suffix}")
+
+    try:
     if video_file_path.suffix == ".mkv" or video_file_path.suffix == ".webm":
         ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
                        '-of default=noprint_wrappers=1:nokey=1 -show_entries '
@@ -40,7 +42,7 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
                        '-of default=noprint_wrappers=1:nokey=1 -show_entries '
                        'stream=width,height,avg_frame_rate,duration').split()
     ffprobe_cmd.append(str(video_file_path))
-    logger.info(f"running: {ffprobe_cmd}")
+    logger.info("running: %s" % " ".join(ffprobe_cmd))
     ffoutput = None
 
     try:
@@ -100,6 +102,9 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
     except subprocess.CalledProcessError as err:
         logger.error(f"error ffprobe exp:{err}, output:{ffoutput}")
         return False
+
+    except BaseException as error:
+        logger.info('An exception occurred: {}'.format(error))
 
     return True
 
@@ -172,3 +177,5 @@ if __name__ == '__main__':
             backend='threading')(delayed(class_process)(
                 class_dir_path, args.dst_path, ext, args.fps, args.size)
                                  for class_dir_path in tqdm(class_dir_paths, postfix="[overall]"))
+
+        logger.info(f"status: {status_list}")
