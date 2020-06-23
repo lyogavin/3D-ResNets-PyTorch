@@ -68,6 +68,7 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
         if x.suffix == '.jpg' and x.name[0] != '.'
     ])
 
+    logger.info(f"exist:{n_exist_frames}  expected:{n_frames}")
     if n_exist_frames >= n_frames:
         logger.info(f"{n_exist_frames} already exists more than expected:{n_frames}, return")
         return True
