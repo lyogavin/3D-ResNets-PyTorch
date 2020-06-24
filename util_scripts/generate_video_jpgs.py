@@ -59,7 +59,7 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
             if len(res) < 4 and video_file_path.suffix == ".mp4":
                 logger.error(f"error ffprobe, output len less then 4: {ffoutput}, try format...")
                 ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
-                               '-of default=noprint_wrappers=1:nokey=1 -show_entries '
+                               '-of default=noprint_wrappers=1:nokey=1 '
                                '-show_entries format=duration').split()
                 ffprobe_cmd.append(f"\"{video_file_path}\"")
                 logger.info("running: %s" % " ".join(ffprobe_cmd))
